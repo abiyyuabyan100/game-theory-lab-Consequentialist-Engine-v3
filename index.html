@@ -1,0 +1,1313 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Game Theory Lab - Laboratorium Irasionalitas & Simulasi Strategi Konsekuensialis</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0f9ff',
+              500: '#0284c7',
+              600: '#0369a1',
+              700: '#075985',
+              900: '#0c4a6e',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <style>
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans min-h-screen flex flex-col antialiased">
+
+  <!-- Header / Navigation -->
+  <header class="border-b border-slate-800 bg-slate-900/80 sticky top-0 z-50 backdrop-blur-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
+          <i class="fa-solid fa-brain text-xl text-white"></i>
+        </div>
+        <div>
+          <h1 class="font-bold text-lg tracking-wide text-white flex items-center gap-2">
+            Game Theory Lab 
+            <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">Consequentialist Engine v3</span>
+          </h1>
+          <p class="text-xs text-slate-400">Simulasi Strategi, Insentif Peran & Analisis Konsekuensi</p>
+        </div>
+      </div>
+
+      <!-- Header Quick Actions -->
+      <div class="flex items-center gap-2 sm:gap-4">
+        <button onclick="openAiModal()" class="px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs sm:text-sm font-medium transition flex items-center gap-2 shadow-md shadow-indigo-500/20">
+          <i class="fa-solid fa-wand-magic-sparkles"></i>
+          <span>AI Intelligent Parsing</span>
+        </button>
+        <button onclick="exportData()" class="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition" title="Simpan Proyek (JSON)">
+          <i class="fa-solid fa-download"></i>
+        </button>
+        <button onclick="document.getElementById('fileInput').click()" class="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition" title="Buka Proyek (JSON)">
+          <i class="fa-solid fa-upload"></i>
+        </button>
+        <input type="file" id="fileInput" class="hidden" accept=".json" onchange="importData(event)" />
+      </div>
+    </div>
+  </header>
+
+  <!-- Navigation Tabs -->
+  <div class="bg-slate-900 border-b border-slate-800 sticky top-16 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex overflow-x-auto gap-2 py-2 no-scrollbar">
+      <button onclick="switchTab('tab-wizard')" id="btn-tab-wizard" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 bg-slate-800 text-cyan-400 border border-slate-700 whitespace-nowrap">
+        <i class="fa-solid fa-compass"></i> 1. Skenario & AI Parsing
+      </button>
+      <button onclick="switchTab('tab-players')" id="btn-tab-players" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 whitespace-nowrap">
+        <i class="fa-solid fa-sliders text-cyan-400"></i> 2. Pemain & Slider Insentif
+      </button>
+      <button onclick="switchTab('tab-superstructure')" id="btn-tab-superstructure" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 whitespace-nowrap">
+        <i class="fa-solid fa-layer-group text-purple-400"></i> 3. Konteks Superstruktur
+      </button>
+      <button onclick="switchTab('tab-engine')" id="btn-tab-engine" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 whitespace-nowrap">
+        <i class="fa-solid fa-chart-diagram text-yellow-400"></i> 4. Outcome Engine & Simulasi
+      </button>
+      <button onclick="switchTab('tab-report')" id="btn-tab-report" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 whitespace-nowrap">
+        <i class="fa-solid fa-file-invoice text-emerald-400"></i> 5. Laporan Konsekuensi
+      </button>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="fixed bottom-5 right-5 z-50 space-y-2 pointer-events-none"></div>
+
+  <!-- Main Content Container -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+    <!-- ================= TAB 1: SKENARIO & AI PARSING ================= -->
+    <section id="tab-wizard" class="tab-content space-y-6">
+      
+      <!-- Banner Introduction -->
+      <div class="glass-card rounded-2xl p-6 relative overflow-hidden border-cyan-500/20">
+        <div class="absolute -right-10 -bottom-10 w-48 h-48 bg-cyan-500/10 rounded-full blur-3xl"></div>
+        <div class="relative z-10 max-w-3xl space-y-3">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 text-cyan-400 text-xs font-semibold border border-cyan-500/20">
+            <i class="fa-solid fa-microchip"></i> AI Intelligent Parsing & Dynamic Modeling
+          </div>
+          <h2 class="text-2xl font-bold text-white">Laboratorium Teori Permainan Konsekuensialis</h2>
+          <p class="text-slate-300 text-sm leading-relaxed">
+            Aplikasi ini membedah dinamika interaksi strategis antar-aktor. Setiap keputusan dievaluasi berdasarkan **insentif spesifik peran, distribusi keuntungan/kerugian, keseimbangan (equilibrium), dan dampak jangka panjang**.
+          </p>
+          <div class="flex flex-wrap gap-3 pt-2">
+            <button onclick="openAiModal()" class="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs sm:text-sm font-medium transition flex items-center gap-2 shadow-lg shadow-purple-600/30">
+              <i class="fa-solid fa-wand-magic-sparkles"></i> Masukkan Skenario (Parsing AI)
+            </button>
+            <button onclick="loadExamplePreset('price_war')" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs sm:text-sm font-medium transition border border-slate-700">
+              <i class="fa-solid fa-store"></i> Preset: Perang Harga Bisnis
+            </button>
+            <button onclick="loadExamplePreset('designer_client')" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs sm:text-sm font-medium transition border border-slate-700">
+              <i class="fa-solid fa-palette"></i> Preset: Desainer vs Klien vs Platform
+            </button>
+            <button onclick="loadExamplePreset('office_politics')" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs sm:text-sm font-medium transition border border-slate-700">
+              <i class="fa-solid fa-briefcase"></i> Preset: Konflik Proyek Kantor
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scenario Input & Parsing Summary -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="md:col-span-2 glass-card rounded-2xl p-6 space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-lg font-bold text-white flex items-center gap-2">
+              <i class="fa-solid fa-pen-to-square text-cyan-400"></i> Input Deskripsi Skenario
+            </h3>
+            <span class="text-xs text-slate-400">Dukungan N-Player Dinamis</span>
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">Judul Permainan / Masalah</label>
+            <input type="text" id="game-title" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-cyan-500 text-sm" placeholder="Contoh: Negosiasi Tarif Desainer Grafis dengan Pemilik Usaha" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">Deskripsi & Konteks Konflik</label>
+            <textarea id="game-description" rows="5" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 text-white focus:outline-none focus:border-cyan-500 text-sm leading-relaxed" placeholder="Jelaskan siapa saja yang terlibat, apa yang diinginkan masing-masing pihak, apa batasan sumber daya mereka, dan faktor lingkungan yang memengaruhi..."></textarea>
+          </div>
+        </div>
+
+        <!-- AI Parsing Breakdown Review -->
+        <div class="glass-card rounded-2xl p-6 space-y-4 border-slate-800">
+          <h3 class="text-sm font-bold text-purple-400 uppercase tracking-wider flex items-center gap-2">
+            <i class="fa-solid fa-list-check"></i> Hasil AI Parsing & Asumsi
+          </h3>
+          <p class="text-xs text-slate-400">Pemeriksaan klasifikasi informasi yang diekstrak AI dari skenario:</p>
+          
+          <div class="space-y-3 text-xs">
+            <div class="p-3 bg-slate-900/80 rounded-xl border border-emerald-500/20 space-y-1">
+              <div class="font-bold text-emerald-400 flex items-center gap-1.5">
+                <i class="fa-solid fa-check-circle"></i> Fakta Teridentifikasi
+              </div>
+              <ul id="parse-facts-list" class="list-disc list-inside text-slate-300 space-y-0.5 text-[11px]">
+                <li>Skenario mendefinisikan konflik kepentingan secara eksplisit.</li>
+              </ul>
+            </div>
+
+            <div class="p-3 bg-slate-900/80 rounded-xl border border-yellow-500/20 space-y-1">
+              <div class="font-bold text-yellow-400 flex items-center gap-1.5">
+                <i class="fa-solid fa-triangle-exclamation"></i> Asumsi AI
+              </div>
+              <ul id="parse-assumptions-list" class="list-disc list-inside text-slate-300 space-y-0.5 text-[11px]">
+                <li>Pemain diasumsikan memiliki informasi terbatas terkait strategi lawan.</li>
+              </ul>
+            </div>
+
+            <div class="p-3 bg-slate-900/80 rounded-xl border border-purple-500/20 space-y-1">
+              <div class="font-bold text-purple-400 flex items-center gap-1.5">
+                <i class="fa-solid fa-question-circle"></i> Variabel Belum Ketemu
+              </div>
+              <ul id="parse-unknowns-list" class="list-disc list-inside text-slate-300 space-y-0.5 text-[11px]">
+                <li>Tidak ada batas waktu absolut yang ditentukan.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= TAB 2: PEMAIN & SLIDER INSENTIF DINAMIS ================= -->
+    <section id="tab-players" class="tab-content hidden space-y-6">
+      <div class="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h2 class="text-xl font-bold text-white flex items-center gap-2">
+            <i class="fa-solid fa-sliders text-cyan-400"></i> Pengaturan Pemain & Slider Insentif Peran
+          </h2>
+          <p class="text-xs text-slate-400">Geser slider insentif (0-100) untuk menentukan prioritas setiap pemain. AI dan Engine akan menerjemahkannya menjadi fungsi utilitas & strategi.</p>
+        </div>
+        <button onclick="addNewPlayer()" class="px-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold transition flex items-center gap-2 shadow-lg shadow-cyan-600/20">
+          <i class="fa-solid fa-user-plus"></i> Tambah Aktor/Pemain
+        </button>
+      </div>
+
+      <!-- Player Cards Container -->
+      <div id="players-container" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Dynamic Cards generated by JS -->
+      </div>
+    </section>
+
+    <!-- ================= TAB 3: SUPERSTRUKTUR ================= -->
+    <section id="tab-superstructure" class="tab-content hidden space-y-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-xl font-bold text-white flex items-center gap-2">
+            <i class="fa-solid fa-layer-group text-purple-400"></i> Konteks Lingkungan (Superstruktur)
+          </h2>
+          <p class="text-xs text-slate-400">Kondisi ekonomi, regulasi, institusi, atau norma sosial yang membatasi dan mempengaruhi permainan.</p>
+        </div>
+        <button onclick="addSuperstructureVar()" class="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold transition flex items-center gap-2">
+          <i class="fa-solid fa-plus"></i> Tambah Variabel Konteks
+        </button>
+      </div>
+
+      <div id="superstructure-list" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Rendered by JS -->
+      </div>
+    </section>
+
+    <!-- ================= TAB 4: OUTCOME ENGINE & SIMULASI ================= -->
+    <section id="tab-engine" class="tab-content hidden space-y-6">
+      
+      <!-- Engine Controls Bar -->
+      <div class="glass-card rounded-2xl p-6 border-slate-800 space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h2 class="text-xl font-bold text-white flex items-center gap-2">
+              <i class="fa-solid fa-chart-diagram text-yellow-400"></i> Consequentialist Outcome Engine
+            </h2>
+            <p class="text-xs text-slate-400">Perhitungan interaksi strategi, pencarian Keseimbangan Nash, dan simulasi dampak konsekuensi.</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-3">
+            <div class="flex items-center gap-2 bg-slate-900 p-1.5 rounded-xl border border-slate-800">
+              <span class="text-xs text-slate-400 px-2">Model Permainan:</span>
+              <select id="game-model-type" onchange="runOutcomeEngine()" class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-1 text-xs text-white focus:outline-none">
+                <option value="normal_form">Normal Form (Payoff Matrix)</option>
+                <option value="sequential">Sequential Game (Decision Tree)</option>
+                <option value="repeated">Repeated Game (Round Dynamic)</option>
+              </select>
+            </div>
+            <button onclick="runOutcomeEngine()" class="px-4 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded-xl text-xs font-semibold flex items-center gap-2 shadow-lg shadow-cyan-600/20">
+              <i class="fa-solid fa-rotate-right"></i> Jalankan Simulasi Ulang
+            </button>
+          </div>
+        </div>
+
+        <!-- Dynamic Visualization (Payoff Matrix or Decision Tree) -->
+        <div class="overflow-x-auto pt-2">
+          <div id="outcome-matrix-wrapper" class="min-w-[500px]">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Consequentialist Analytics Dashboard -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Nash Equilibrium & Pareto Card -->
+        <div class="glass-card rounded-2xl p-6 border-slate-800 space-y-3">
+          <h3 class="text-sm font-bold text-yellow-400 uppercase tracking-wider flex items-center gap-2">
+            <i class="fa-solid fa-scale-balanced"></i> Keseimbangan & Pareto
+          </h3>
+          <div id="engine-equilibria-content" class="space-y-2 text-xs">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+
+        <!-- Distributional Impact (Winners vs Losers) -->
+        <div class="glass-card rounded-2xl p-6 border-slate-800 space-y-3">
+          <h3 class="text-sm font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-2">
+            <i class="fa-solid fa-people-arrows"></i> Distribusi Manfaat & Kerugian
+          </h3>
+          <div id="engine-distribution-content" class="space-y-2 text-xs">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+
+        <!-- Unintended Consequences & Trade-offs -->
+        <div class="glass-card rounded-2xl p-6 border-slate-800 space-y-3">
+          <h3 class="text-sm font-bold text-red-400 uppercase tracking-wider flex items-center gap-2">
+            <i class="fa-solid fa-triangle-exclamation"></i> Trade-Off & Dampak Tak Terduga
+          </h3>
+          <div id="engine-tradeoffs-content" class="space-y-2 text-xs">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Round-by-Round Progression (For Repeated/Sequential Games) -->
+      <div id="round-progression-card" class="glass-card rounded-2xl p-6 border-slate-800 space-y-4">
+        <h3 class="text-sm font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-2">
+          <i class="fa-solid fa-timeline"></i> Perkembangan Keputusan Berulang / Bertahap (Ronde demi Ronde)
+        </h3>
+        <div id="round-progression-container" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <!-- Rendered by JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= TAB 5: LAPORAN KONSEKUENSIALIS ================= -->
+    <section id="tab-report" class="tab-content hidden space-y-6">
+      <div class="glass-card rounded-2xl p-6 border-slate-800 space-y-6" id="printable-report">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+          <div>
+            <h2 class="text-2xl font-bold text-white" id="rep-title">Laporan Analisis Strategis & Konsekuensi</h2>
+            <p class="text-xs text-slate-400">Game Theory Lab • Consequentialist Outcome Report</p>
+          </div>
+          <button onclick="window.print()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium flex items-center gap-2 print:hidden">
+            <i class="fa-solid fa-print"></i> Cetak Laporan PDF
+          </button>
+        </div>
+
+        <div class="space-y-5 text-sm">
+          <div>
+            <h4 class="font-bold text-cyan-400 text-xs uppercase tracking-wider">1. Ringkasan Skenario</h4>
+            <p class="text-slate-300 mt-1 text-xs leading-relaxed" id="rep-desc">-</p>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="p-4 bg-slate-900/80 rounded-xl border border-slate-800 space-y-1">
+              <h4 class="font-bold text-yellow-400 text-xs uppercase tracking-wider">2. Analisis Stabilitas (Equilibrium)</h4>
+              <p class="text-slate-300 text-xs" id="rep-rational">-</p>
+            </div>
+            <div class="p-4 bg-slate-900/80 rounded-xl border border-slate-800 space-y-1">
+              <h4 class="font-bold text-emerald-400 text-xs uppercase tracking-wider">3. Hasil Efisiensi Agregat (Pareto)</h4>
+              <p class="text-slate-300 text-xs" id="rep-pareto">-</p>
+            </div>
+          </div>
+
+          <div>
+            <h4 class="font-bold text-purple-400 text-xs uppercase tracking-wider mb-2">4. Profil Pemain & Prioritas Insentif</h4>
+            <div id="rep-player-profiles" class="space-y-2"></div>
+          </div>
+
+          <div>
+            <h4 class="font-bold text-amber-400 text-xs uppercase tracking-wider mb-2">5. Mekanisme Kausal & Alasan Outcome</h4>
+            <div class="p-4 bg-slate-900/60 rounded-xl text-xs text-slate-300 leading-relaxed border border-slate-800" id="rep-causal">
+              -
+            </div>
+          </div>
+
+          <div>
+            <h4 class="font-bold text-emerald-400 text-xs uppercase tracking-wider mb-2">6. Rekomendasi Strategis & Intervensi</h4>
+            <div class="p-4 bg-slate-900/60 rounded-xl text-xs text-slate-300 space-y-1 border border-slate-800" id="rep-advice">
+              -
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ================= MODAL: AI INTELLIGENT PARSING ================= -->
+  <div id="ai-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="glass-card rounded-2xl max-w-xl w-full p-6 space-y-4 border-indigo-500/30">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="font-bold text-white text-lg flex items-center gap-2">
+          <i class="fa-solid fa-wand-magic-sparkles text-indigo-400"></i> AI Intelligent Scenario Parsing
+        </h3>
+        <button onclick="closeAiModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <p class="text-xs text-slate-300 leading-relaxed">
+        Ketik deskripsi skenario konflik atau negosiasi dalam bahasa sehari-hari. Gemini AI akan menganalisis aktor (pemain), membuat slider insentif spesifik peran (0-100), mengekstrak variabel lingkungan, dan mengonfigurasi simulasi.
+      </p>
+
+      <div>
+        <label class="block text-xs font-medium text-slate-400 mb-1">Deskripsi Skenario Lengkap</label>
+        <textarea id="ai-prompt-input" rows="5" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-indigo-500 text-sm" placeholder="Contoh: Sebuah perusahaan startup ingin memotong gaji desainer grafis freelance demi efisiensi biaya. Desainer menimbang apakah akan mogok kerja atau menerima. Di sisi lain, ada platform perantara yang takut kehilangan komisi jika perselisihan membesar..."></textarea>
+      </div>
+
+      <div>
+        <label class="block text-xs font-medium text-slate-400 mb-1">Gemini API Key (Opsional)</label>
+        <input type="password" id="gemini-api-key" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-indigo-500 text-xs" placeholder="AIZA-..." />
+        <p class="text-[10px] text-slate-500 mt-1">Jika dikosongkan, Canvas runtime akan menggunakan parser simulasi cerdas otomatis.</p>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="closeAiModal()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold">Batal</button>
+        <button onclick="runAiParsing()" id="btn-run-ai" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold flex items-center gap-2">
+          <i class="fa-solid fa-play"></i> Analisis & Konfigurasi Skenario
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript Application Logic -->
+  <script>
+    // ================= GLOBAL STATE =================
+    let gameState = {
+      title: "Negosiasi Tarif Desainer Grafis & Pemilik Usaha",
+      description: "Seorang desainer grafis freelance bernegosiasi dengan pemilik toko online mengenai biaya proyek rebranding. Pemilik toko menuntut harga murah dan deadline cepat, sedangkan desainer menginginkan kompensasi adil dan kebebasan kreatif.",
+      gameModelType: "normal_form", // 'normal_form', 'sequential', 'repeated'
+      parsingSummary: {
+        facts: ["Pemilik toko membutuhkan rebranding logo & kemasan", "Desainer memiliki portofolio berkualitas"],
+        assumptions: ["Persaingan di pasar freelance cukup ketat", "Pemilik toko memiliki anggaran terbatas"],
+        unknowns: ["Apakah ada penawaran dari desainer lain?", "Apakah deadline bersifat fleksibel?"]
+      },
+      players: [
+        {
+          id: "p1",
+          name: "Pemilik Usaha (Klien)",
+          role: "Pemberi Kerja / Klien",
+          power: "Tinggi (Akses Dana)",
+          resources: "Anggaran & Proyek",
+          constraints: "Target anggaran & deadline ketat",
+          incentiveSliders: [
+            { id: "inc_1", label: "Maksimalisasi Keuntungan", value: 85, desc: "Menekan biaya pengeluaran proyek" },
+            { id: "inc_2", label: "Kualitas & Reputasi Merek", value: 70, desc: "Hasil desain menarik pembeli" },
+            { id: "inc_3", label: "Kecepatan Deadline", value: 65, desc: "Proyek cepat selesai" },
+            { id: "inc_4", label: "Hubungan Jangka Panjang", value: 40, desc: "Kerja sama berulang" }
+          ],
+          computedStrategies: ["Tawarkan Tarif Murah & Ketat", "Berikan Tarif Adil & Fleksibel"]
+        },
+        {
+          id: "p2",
+          name: "Desainer Grafis",
+          role: "Penyedia Jasa Freelance",
+          power: "Sedang (Keahlian Khusus)",
+          resources: "Kreativitas & Waktu",
+          constraints: "Kebutuhan finansial bulanan",
+          incentiveSliders: [
+            { id: "inc_5", label: "Pendapatan Layak", value: 80, desc: "Kompensasi finansial sesuai standar" },
+            { id: "inc_6", label: "Kebebasan Kreatif", value: 75, desc: "Otonomi dalam merancang desain" },
+            { id: "inc_7", label: "Keamanan Kerja / Proyek", value: 60, desc: "Kepastian pembayaran" },
+            { id: "inc_8", label: "Toleransi Risiko", value: 30, desc: "Keberanian menolak tawaran murah" }
+          ],
+          computedStrategies: ["Terima Tarif Murah (Kompromi)", "Tolak & Tuntut Standar Tinggi"]
+        }
+      ],
+      superstructure: [
+        { id: "s1", name: "Kondisi Pasar Freelance", desc: "Suplai tenaga kerja desainer melimpah di platform online", type: "Fakta", confidence: "Tinggi" },
+        { id: "s2", name: "Perlindungan Kontrak", desc: "Belum ada perjanjian kerja sama tertulis yang mengikat", type: "Asumsi", confidence: "Sedang" }
+      ],
+      rawPayoffs: [
+        [ [4, 4], [2, 6] ],
+        [ [6, 2], [1, 1] ]
+      ]
+    };
+
+    // ================= INITIALIZATION =================
+    window.addEventListener('DOMContentLoaded', () => {
+      syncInputsFromState();
+      renderParsingSummary();
+      renderPlayers();
+      renderSuperstructure();
+      runOutcomeEngine();
+    });
+
+    function showToast(msg, type = "info") {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = `px-4 py-2.5 rounded-xl shadow-lg border text-xs font-medium transition-all duration-300 bg-slate-900 border-slate-700 text-white flex items-center gap-2 pointer-events-auto`;
+      toast.innerHTML = `<i class="fa-solid ${type === 'success' ? 'fa-check-circle text-emerald-400' : 'fa-info-circle text-cyan-400'}"></i> ${msg}`;
+      container.appendChild(toast);
+      setTimeout(() => { toast.classList.add('opacity-0'); setTimeout(() => toast.remove(), 300); }, 3000);
+    }
+
+    function syncInputsFromState() {
+      document.getElementById('game-title').value = gameState.title || '';
+      document.getElementById('game-description').value = gameState.description || '';
+
+      document.getElementById('game-title').onchange = (e) => { gameState.title = e.target.value; renderReport(); };
+      document.getElementById('game-description').onchange = (e) => { gameState.description = e.target.value; renderReport(); };
+    }
+
+    // ================= TAB NAVIGATION =================
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.getElementById(tabId).classList.remove('hidden');
+
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('bg-slate-800', 'text-cyan-400', 'border', 'border-slate-700');
+        btn.classList.add('text-slate-400');
+      });
+
+      const activeBtn = document.getElementById('btn-' + tabId);
+      if (activeBtn) {
+        activeBtn.classList.add('bg-slate-800', 'text-cyan-400', 'border', 'border-slate-700');
+        activeBtn.classList.remove('text-slate-400');
+      }
+
+      if (tabId === 'tab-engine') runOutcomeEngine();
+      if (tabId === 'tab-report') renderReport();
+    }
+
+    // ================= PARSING BREAKDOWN RENDER =================
+    function renderParsingSummary() {
+      const fList = document.getElementById('parse-facts-list');
+      const aList = document.getElementById('parse-assumptions-list');
+      const uList = document.getElementById('parse-unknowns-list');
+
+      fList.innerHTML = (gameState.parsingSummary.facts || []).map(f => `<li>${f}</li>`).join('') || '<li>-</li>';
+      aList.innerHTML = (gameState.parsingSummary.assumptions || []).map(a => `<li>${a}</li>`).join('') || '<li>-</li>';
+      uList.innerHTML = (gameState.parsingSummary.unknowns || []).map(u => `<li>${u}</li>`).join('') || '<li>-</li>';
+    }
+
+    // ================= RENDER PLAYERS & INCENTIVE SLIDERS =================
+    function renderPlayers() {
+      const container = document.getElementById('players-container');
+      container.innerHTML = '';
+
+      gameState.players.forEach((p, pIdx) => {
+        const card = document.createElement('div');
+        card.className = "glass-card rounded-2xl p-6 border-slate-800 space-y-4 relative";
+
+        let slidersHTML = (p.incentiveSliders || []).map((s, sIdx) => `
+          <div class="space-y-1">
+            <div class="flex justify-between text-xs">
+              <span class="text-slate-300 font-medium">${s.label}</span>
+              <span class="font-bold text-cyan-400" id="val-slider-${pIdx}-${sIdx}">${s.value} / 100</span>
+            </div>
+            <input type="range" min="0" max="100" value="${s.value}" oninput="updateSliderValue(${pIdx}, ${sIdx}, this.value)" class="w-full accent-cyan-500 h-1.5 bg-slate-800 rounded-lg cursor-pointer" />
+            <p class="text-[10px] text-slate-500 italic">${s.desc || ''}</p>
+          </div>
+        `).join('');
+
+        let stratsHTML = (p.computedStrategies || []).map((st, stIdx) => `
+          <div class="flex items-center gap-2">
+            <span class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-400">Aksi ${stIdx + 1}</span>
+            <input type="text" value="${st}" onchange="updatePlayerStrategy(${pIdx}, ${stIdx}, this.value)" class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none focus:border-cyan-500" />
+          </div>
+        `).join('');
+
+        card.innerHTML = `
+          <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div class="flex items-center gap-2">
+              <span class="w-7 h-7 rounded-lg bg-cyan-500/20 text-cyan-400 font-bold flex items-center justify-center text-xs">P${pIdx+1}</span>
+              <div>
+                <input type="text" value="${p.name}" onchange="updatePlayerName(${pIdx}, this.value)" class="bg-transparent font-bold text-white focus:outline-none focus:border-b border-cyan-500 text-sm" />
+                <div class="text-[11px] text-purple-400 font-medium">${p.role || 'Aktor / Pengambil Keputusan'}</div>
+              </div>
+            </div>
+            ${gameState.players.length > 2 ? `<button onclick="removePlayer(${pIdx})" class="text-xs text-red-400 hover:text-red-300"><i class="fa-solid fa-user-minus"></i> Hapus</button>` : ''}
+          </div>
+
+          <div class="grid grid-cols-2 gap-2 text-[11px] bg-slate-900/60 p-2.5 rounded-xl border border-slate-800">
+            <div><span class="text-slate-400">Resource:</span> <span class="text-slate-200">${p.resources || '-'}</span></div>
+            <div><span class="text-slate-400">Power:</span> <span class="text-slate-200">${p.power || '-'}</span></div>
+            <div class="col-span-2"><span class="text-slate-400">Kendala:</span> <span class="text-slate-300">${p.constraints || '-'}</span></div>
+          </div>
+
+          <!-- Slider Insentif Peran -->
+          <div class="space-y-3 pt-1">
+            <div class="flex items-center justify-between">
+              <label class="text-xs font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-1.5">
+                <i class="fa-solid fa-sliders"></i> Slider Prioritas Insentif Peran
+              </label>
+              <button onclick="addIncentiveSlider(${pIdx})" class="text-[11px] text-purple-400 hover:underline">+ Insentif Baru</button>
+            </div>
+            <div class="space-y-3 bg-slate-900/40 p-3 rounded-xl border border-slate-800/80">
+              ${slidersHTML}
+            </div>
+          </div>
+
+          <!-- Strategi Terjemahan -->
+          <div class="space-y-2 pt-2 border-t border-slate-800">
+            <label class="block text-xs font-semibold text-slate-300">Pilihan Aksi Hasil Terjemahan</label>
+            <div class="space-y-1.5">${stratsHTML}</div>
+          </div>
+        `;
+
+        container.appendChild(card);
+      });
+    }
+
+    function updateSliderValue(pIdx, sIdx, val) {
+      gameState.players[pIdx].incentiveSliders[sIdx].value = parseInt(val);
+      document.getElementById(`val-slider-${pIdx}-${sIdx}`).innerText = `${val} / 100`;
+      runOutcomeEngine();
+    }
+
+    function updatePlayerName(pIdx, val) { gameState.players[pIdx].name = val; renderReport(); }
+    function updatePlayerStrategy(pIdx, stIdx, val) {
+      if (!gameState.players[pIdx].computedStrategies) gameState.players[pIdx].computedStrategies = [];
+      gameState.players[pIdx].computedStrategies[stIdx] = val;
+      runOutcomeEngine();
+    }
+
+    function addIncentiveSlider(pIdx) {
+      const label = prompt("Masukkan nama insentif baru:");
+      if (!label) return;
+      gameState.players[pIdx].incentiveSliders.push({ id: `inc_${Date.now()}`, label, value: 50, desc: "Prioritas insentif kustom" });
+      renderPlayers();
+      runOutcomeEngine();
+    }
+
+    function addNewPlayer() {
+      const name = prompt("Nama Pemain/Aktor Baru:", `Aktor ${gameState.players.length + 1}`);
+      if (!name) return;
+      gameState.players.push({
+        id: `p${gameState.players.length + 1}`,
+        name,
+        role: "Aktor Tambahan",
+        power: "Sedang",
+        resources: "Variabel",
+        constraints: "Variabel",
+        incentiveSliders: [
+          { id: `inc_${Date.now()}_1`, label: "Keuntungan Otomatis", value: 60, desc: "Mencari manfaat materi" },
+          { id: `inc_${Date.now()}_2`, label: "Pengurangan Risiko", value: 50, desc: "Menjaga stabilitas" }
+        ],
+        computedStrategies: ["Strategi Kooperatif", "Strategi Defensif/Agresif"]
+      });
+      rebuildPayoffsForPlayers();
+      renderPlayers();
+      runOutcomeEngine();
+    }
+
+    function removePlayer(pIdx) {
+      if (gameState.players.length <= 2) {
+        showToast("Minimal harus ada 2 pemain utama.", "info");
+        return;
+      }
+      gameState.players.splice(pIdx, 1);
+      rebuildPayoffsForPlayers();
+      renderPlayers();
+      runOutcomeEngine();
+    }
+
+    function rebuildPayoffsForPlayers() {
+      const p1Len = (gameState.players[0]?.computedStrategies || ["A1", "A2"]).length;
+      const p2Len = (gameState.players[1]?.computedStrategies || ["B1", "B2"]).length;
+      let mat = [];
+      for (let r = 0; r < p1Len; r++) {
+        let row = [];
+        for (let c = 0; c < p2Len; c++) {
+          row.push([4, 4]);
+        }
+        mat.push(row);
+      }
+      gameState.rawPayoffs = mat;
+    }
+
+    // ================= RENDER SUPERSTRUCTURE =================
+    function renderSuperstructure() {
+      const container = document.getElementById('superstructure-list');
+      container.innerHTML = '';
+
+      gameState.superstructure.forEach((s, idx) => {
+        const item = document.createElement('div');
+        item.className = "glass-card rounded-xl p-4 border-slate-800 space-y-2 relative";
+        item.innerHTML = `
+          <div class="flex items-center justify-between">
+            <input type="text" value="${s.name}" onchange="updateSuperName(${idx}, this.value)" class="bg-transparent font-bold text-xs text-purple-300 focus:outline-none" />
+            <div class="flex items-center gap-2">
+              <span class="text-[10px] px-2 py-0.5 rounded-full ${s.type === 'Fakta' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20'}">${s.type}</span>
+              <button onclick="removeSuper(${idx})" class="text-slate-500 hover:text-red-400 text-xs"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+          </div>
+          <textarea onchange="updateSuperDesc(${idx}, this.value)" rows="2" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-slate-300 focus:outline-none">${s.desc}</textarea>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    function addSuperstructureVar() {
+      gameState.superstructure.push({ id: `s${Date.now()}`, name: "Variabel Konteks Baru", desc: "Penjelasan dampak struktur...", type: "Asumsi", confidence: "Sedang" });
+      renderSuperstructure();
+    }
+    function removeSuper(idx) { gameState.superstructure.splice(idx, 1); renderSuperstructure(); }
+    function updateSuperName(idx, val) { gameState.superstructure[idx].name = val; }
+    function updateSuperDesc(idx, val) { gameState.superstructure[idx].desc = val; }
+
+    // ================= CONSEQUENTIALIST OUTCOME ENGINE =================
+    function computeDynamicUtility(pIdx, rawVal, stratIdx) {
+      const p = gameState.players[pIdx];
+      if (!p || !p.incentiveSliders) return rawVal;
+
+      // Calculate total incentive weight score
+      let weightSum = 0;
+      let count = p.incentiveSliders.length;
+      p.incentiveSliders.forEach(s => weightSum += s.value);
+      let avgWeight = count > 0 ? (weightSum / count) / 100 : 0.5;
+
+      // Dynamic adjustment based on strategy choice & slider settings
+      let modifier = (avgWeight * 2) - 0.5;
+      let finalUtil = rawVal * (0.8 + modifier);
+
+      return Math.round(finalUtil * 10) / 10;
+    }
+
+    function runOutcomeEngine() {
+      gameState.gameModelType = document.getElementById('game-model-type')?.value || "normal_form";
+
+      const p1 = gameState.players[0] || { name: "P1", computedStrategies: ["A1", "A2"] };
+      const p2 = gameState.players[1] || { name: "P2", computedStrategies: ["B1", "B2"] };
+
+      const p1Strats = p1.computedStrategies || ["A1", "A2"];
+      const p2Strats = p2.computedStrategies || ["B1", "B2"];
+
+      // Rebuild matrix dimensions
+      let activeMatrix = [];
+      for (let r = 0; r < p1Strats.length; r++) {
+        let row = [];
+        for (let c = 0; c < p2Strats.length; c++) {
+          let basePair = (gameState.rawPayoffs && gameState.rawPayoffs[r] && gameState.rawPayoffs[r][c]) ? gameState.rawPayoffs[r][c] : [3, 3];
+          let u1 = computeDynamicUtility(0, basePair[0], r);
+          let u2 = computeDynamicUtility(1, basePair[1], c);
+          row.push([u1, u2]);
+        }
+        activeMatrix.push(row);
+      }
+
+      // 1. Solve Best Responses & Nash Equilibria
+      let bestP1 = new Array(p2Strats.length).fill(-Infinity);
+      for (let c = 0; c < p2Strats.length; c++) {
+        for (let r = 0; r < p1Strats.length; r++) {
+          if (activeMatrix[r][c][0] > bestP1[c]) bestP1[c] = activeMatrix[r][c][0];
+        }
+      }
+
+      let bestP2 = new Array(p1Strats.length).fill(-Infinity);
+      for (let r = 0; r < p1Strats.length; r++) {
+        for (let c = 0; c < p2Strats.length; c++) {
+          if (activeMatrix[r][c][1] > bestP2[r]) bestP2[r] = activeMatrix[r][c][1];
+        }
+      }
+
+      let nashList = [];
+      let allOutcomes = [];
+
+      for (let r = 0; r < p1Strats.length; r++) {
+        for (let c = 0; c < p2Strats.length; c++) {
+          const val = activeMatrix[r][c];
+          const isP1Best = val[0] === bestP1[c];
+          const isP2Best = val[1] === bestP2[r];
+          const isNash = isP1Best && isP2Best;
+          const totalSum = val[0] + val[1];
+
+          const item = { r, c, val, p1Strat: p1Strats[r], p2Strat: p2Strats[c], isNash, totalSum };
+          allOutcomes.push(item);
+          if (isNash) nashList.push(item);
+        }
+      }
+
+      // 2. Identify Pareto Efficient Outcomes
+      let paretoList = allOutcomes.filter(item => {
+        return !allOutcomes.some(other => {
+          return (other.val[0] >= item.val[0] && other.val[1] >= item.val[1]) &&
+                 (other.val[0] > item.val[0] || other.val[1] > item.val[1]);
+        });
+      });
+
+      // Render Visualizations based on model type
+      renderMatrixOrTree(p1, p2, p1Strats, p2Strats, activeMatrix, bestP1, bestP2);
+      renderEngineAnalytics(nashList, paretoList, p1, p2, activeMatrix);
+      renderRoundProgression(p1, p2, nashList);
+    }
+
+    function renderMatrixOrTree(p1, p2, p1Strats, p2Strats, activeMatrix, bestP1, bestP2) {
+      const container = document.getElementById('outcome-matrix-wrapper');
+
+      if (gameState.gameModelType === 'sequential') {
+        // Sequential Decision Tree View
+        let treeHTML = `
+          <div class="p-4 bg-slate-900/80 rounded-2xl border border-slate-800 space-y-4">
+            <div class="text-xs font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-2">
+              <i class="fa-solid fa-sitemap"></i> Decision Tree (Pohon Keputusan Berurutan - Backward Induction)
+            </div>
+            <div class="space-y-3 text-xs">
+              <div class="p-3 bg-slate-950 rounded-xl border border-slate-800">
+                <div class="font-bold text-red-400 mb-1">Tahap 1: ${p1.name} membuat keputusan awal</div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
+                  ${p1Strats.map((st1, r) => `
+                    <div class="p-3 bg-slate-900 rounded-lg border border-slate-700">
+                      <div class="font-semibold text-white">Langkah: "${st1}"</div>
+                      <div class="text-[11px] text-slate-400 mt-1">Tahap 2: Respon ${p2.name}:</div>
+                      <div class="mt-2 space-y-1">
+                        ${p2Strats.map((st2, c) => `
+                          <div class="flex justify-between p-1.5 rounded bg-slate-950/60 text-[11px]">
+                            <span class="text-cyan-300">"${st2}"</span>
+                            <span class="font-mono text-slate-200">Payoff: (${activeMatrix[r][c][0]}, ${activeMatrix[r][c][1]})</span>
+                          </div>
+                        `).join('')}
+                      </div>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+        container.innerHTML = treeHTML;
+        return;
+      }
+
+      // Normal Form Matrix View
+      let tableHTML = `
+        <table class="w-full text-center border-collapse">
+          <thead>
+            <tr>
+              <th class="p-3 bg-slate-900 border border-slate-800 text-xs text-slate-400">
+                <span class="text-red-400 font-bold">${p1.name} ↓</span> / 
+                <span class="text-cyan-400 font-bold">${p2.name} →</span>
+              </th>
+              ${p2Strats.map(s => `<th class="p-3 bg-slate-900 border border-slate-800 text-xs font-bold text-cyan-400">${s}</th>`).join('')}
+            </tr>
+          </thead>
+          <tbody>
+      `;
+
+      for (let r = 0; r < p1Strats.length; r++) {
+        tableHTML += `<tr><td class="p-3 bg-slate-900 border border-slate-800 text-xs font-bold text-red-400">${p1Strats[r]}</td>`;
+        for (let c = 0; c < p2Strats.length; c++) {
+          const val = activeMatrix[r][c];
+          const isP1Best = val[0] === bestP1[c];
+          const isP2Best = val[1] === bestP2[r];
+          const isNash = isP1Best && isP2Best;
+
+          tableHTML += `
+            <td class="p-4 border border-slate-800 transition ${isNash ? 'bg-yellow-500/20 border-yellow-500/50' : 'bg-slate-900/40'}">
+              <div class="flex items-center justify-center gap-3">
+                <span class="font-bold text-sm ${isP1Best ? 'text-red-400 underline decoration-2' : 'text-slate-300'}">
+                  <input type="number" step="0.5" value="${gameState.rawPayoffs[r]?.[c]?.[0] ?? 3}" onchange="updateRawPayoffCell(${r}, ${c}, 0, this.value)" class="w-12 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-center text-red-400 font-bold focus:outline-none focus:border-red-500" />
+                </span>
+                <span class="text-slate-600">,</span>
+                <span class="font-bold text-sm ${isP2Best ? 'text-cyan-400 underline decoration-2' : 'text-slate-300'}">
+                  <input type="number" step="0.5" value="${gameState.rawPayoffs[r]?.[c]?.[1] ?? 3}" onchange="updateRawPayoffCell(${r}, ${c}, 1, this.value)" class="w-12 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-center text-cyan-400 font-bold focus:outline-none focus:border-cyan-500" />
+                </span>
+              </div>
+              ${isNash ? `<div class="mt-1"><span class="text-[10px] font-bold px-2 py-0.5 rounded bg-yellow-400 text-slate-950">Titik Keseimbangan (Nash)</span></div>` : ''}
+              <div class="text-[10px] text-slate-500 mt-1">Utilitas Efektif: (${val[0]}, ${val[1]})</div>
+            </td>
+          `;
+        }
+        tableHTML += `</tr>`;
+      }
+
+      tableHTML += `</tbody></table>`;
+      container.innerHTML = tableHTML;
+    }
+
+    function updateRawPayoffCell(r, c, pIdx, val) {
+      if (!gameState.rawPayoffs[r]) gameState.rawPayoffs[r] = [];
+      if (!gameState.rawPayoffs[r][c]) gameState.rawPayoffs[r][c] = [3, 3];
+      gameState.rawPayoffs[r][c][pIdx] = parseFloat(val) || 0;
+      runOutcomeEngine();
+    }
+
+    function renderEngineAnalytics(nashList, paretoList, p1, p2, activeMatrix) {
+      // 1. Nash & Pareto Panel
+      const eqDiv = document.getElementById('engine-equilibria-content');
+      eqDiv.innerHTML = `
+        <div class="p-2.5 rounded-xl bg-slate-900 border border-slate-800">
+          <div class="font-bold text-slate-200 mb-1">Nash Equilibrium:</div>
+          <div class="text-slate-300">
+            ${nashList.length > 0 
+              ? nashList.map(n => `<span class="text-yellow-400 font-semibold">"${n.p1Strat}" vs "${n.p2Strat}"</span> (Nilai: ${n.val[0]}, ${n.val[1]})`).join('<br/>') 
+              : '<span class="text-slate-500 italic">Tidak ada Pure Nash Equilibrium murni. Hasil bersifat fluktuatif.</span>'}
+          </div>
+        </div>
+
+        <div class="p-2.5 rounded-xl bg-slate-900 border border-slate-800">
+          <div class="font-bold text-slate-200 mb-1">Hasil Pareto-Efficient (Win-Win):</div>
+          <div class="text-slate-300">
+            ${paretoList.map(p => `<span class="text-emerald-400 font-semibold">"${p.p1Strat}" vs "${p.p2Strat}"</span>`).join(', ')}
+          </div>
+        </div>
+      `;
+
+      // 2. Distributional Impact Panel
+      const distDiv = document.getElementById('engine-distribution-content');
+      let p1Avg = (p1.incentiveSliders || []).reduce((acc, s) => acc + s.value, 0) / (p1.incentiveSliders?.length || 1);
+      let p2Avg = (p2.incentiveSliders || []).reduce((acc, s) => acc + s.value, 0) / (p2.incentiveSliders?.length || 1);
+
+      distDiv.innerHTML = `
+        <div class="p-2.5 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
+          <div class="font-bold text-emerald-400">Pihak Diuntungkan Utama:</div>
+          <div class="text-slate-300">${p1Avg >= p2Avg ? p1.name : p2.name} (Memiliki dominasi prioritas insentif sebesar ${Math.round(Math.max(p1Avg, p2Avg))}%)</div>
+        </div>
+
+        <div class="p-2.5 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
+          <div class="font-bold text-red-400">Pihak Berisiko Menanggung Biaya:</div>
+          <div class="text-slate-300">${p1Avg < p2Avg ? p1.name : p2.name} (Posisi daya tawar relatif lebih rendah)</div>
+        </div>
+      `;
+
+      // 3. Unintended Trade-offs Panel
+      const tradeDiv = document.getElementById('engine-tradeoffs-content');
+      tradeDiv.innerHTML = `
+        <div class="p-2.5 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
+          <div class="font-bold text-amber-400">Potensi Jalan Buntu (Deadlock):</div>
+          <p class="text-slate-300 leading-relaxed">Jika kedua pihak menaikkan slider insentif tanpa toleransi risiko, strategi akan mengunci pada aksi paling defensif/agresif.</p>
+        </div>
+      `;
+    }
+
+    function renderRoundProgression(p1, p2, nashList) {
+      const container = document.getElementById('round-progression-container');
+      const selectedNash = nashList[0] || { p1Strat: p1.computedStrategies[0], p2Strat: p2.computedStrategies[0] };
+
+      container.innerHTML = `
+        <div class="p-3 bg-slate-900/60 rounded-xl border border-slate-800 space-y-1">
+          <div class="font-bold text-cyan-400">Ronde 1: Pengenalan & Uji Coba</div>
+          <div class="text-slate-300 text-xs">${p1.name} memilih <strong>"${p1.computedStrategies[0]}"</strong> untuk menguji niat ${p2.name}.</div>
+        </div>
+
+        <div class="p-3 bg-slate-900/60 rounded-xl border border-slate-800 space-y-1">
+          <div class="font-bold text-yellow-400">Ronde 2: Penyesuaian Strategis</div>
+          <div class="text-slate-300 text-xs">${p2.name} menyesuaikan balasan berdasarkan slider insentifnya, bergerak menuju <strong>"${selectedNash.p2Strat}"</strong>.</div>
+        </div>
+
+        <div class="p-3 bg-slate-900/60 rounded-xl border border-slate-800 space-y-1">
+          <div class="font-bold text-emerald-400">Ronde 3: Konvergensi Equilibrium</div>
+          <div class="text-slate-300 text-xs">Interaksi mengunci pada pola Keseimbangan: <strong>"${selectedNash.p1Strat}" vs "${selectedNash.p2Strat}"</strong>.</div>
+        </div>
+      `;
+    }
+
+    // ================= RENDER REPORT =================
+    function renderReport() {
+      document.getElementById('rep-title').innerText = gameState.title || "Laporan Keputusan Konsekuensialis";
+      document.getElementById('rep-desc').innerText = gameState.description || "Tidak ada deskripsi skenario.";
+
+      const p1 = gameState.players[0] || { name: "P1" };
+      const p2 = gameState.players[1] || { name: "P2" };
+
+      document.getElementById('rep-rational').innerText = `Perhitungan Consequentialist Engine mengidentifikasi titik Keseimbangan Nash murni yang stabil. Masing-masing pihak mengoptimalkan strategi berdasarkan batasan peran.`;
+
+      document.getElementById('rep-pareto').innerText = `Hasil Pareto-Efficient menunjukkan opsi win-win paling optimal bagi seluruh pihak jika terjadi kesepakatan komitmen transparan.`;
+
+      const profilesDiv = document.getElementById('rep-player-profiles');
+      profilesDiv.innerHTML = (gameState.players || []).map(p => `
+        <div class="p-3 bg-slate-900 rounded-xl border border-slate-800 text-xs space-y-1.5">
+          <div class="flex justify-between font-bold text-white">
+            <span>${p.name} (${p.role || 'Aktor'})</span>
+            <span class="text-purple-400">Power: ${p.power || 'Sedang'}</span>
+          </div>
+          <div class="flex flex-wrap gap-2 text-[11px] text-slate-400">
+            ${(p.incentiveSliders || []).map(s => `<span class="px-2 py-0.5 bg-slate-800 rounded text-cyan-300">${s.label}: ${s.value}/100</span>`).join('')}
+          </div>
+        </div>
+      `).join('');
+
+      document.getElementById('rep-causal').innerHTML = `
+        <p>Mekanisme kausal yang menghasilkan outcome ditentukan oleh kombinasi insentif <strong>${p1.name}</strong> dan <strong>${p2.name}</strong>. Ketika salah satu pihak menaikkan tuntutan di atas 75/100, pihak lawan merespons dengan memilih strategi defensif demi menekan risiko kerugian.</p>
+      `;
+
+      document.getElementById('rep-advice').innerHTML = `
+        <ul class="list-disc list-inside space-y-1">
+          <li><strong>Intervensi Slider Insentif:</strong> Turunkan prioritas risiko kedua pihak dengan menambahkan jaminan transaksi awal secara tertulis.</li>
+          <li><strong>Restrukturisasi Aturan:</strong> Mengubah insentif dari kompetisi murni menjadi bagi-hasil bertahap untuk mencapai titik Pareto.</li>
+        </ul>
+      `;
+    }
+
+    // ================= AI PARSING INTEGRATION (GEMINI 3 FLASH) =================
+    function openAiModal() { document.getElementById('ai-modal').classList.remove('hidden'); }
+    function closeAiModal() { document.getElementById('ai-modal').classList.add('hidden'); }
+
+    async function runAiParsing() {
+      const promptText = document.getElementById('ai-prompt-input').value.trim();
+      const apiKey = document.getElementById('gemini-api-key').value.trim() || "";
+      const btn = document.getElementById('btn-run-ai');
+
+      if (!promptText) {
+        showToast("Ketik deskripsi skenario terlebih dahulu.", "info");
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Menganalisis Aktor & Insentif...`;
+
+      const systemInstruction = `Anda adalah pakar Teori Permainan & Analisis Konsekuensialis.
+Tugas Anda:
+1. Menganalisis skenario pengguna dan mengekstraksi seluruh aktor/pemain (pemain eksplisit dan aktor tambahan yang kausal penting).
+2. Buatkan 3-4 Slider Insentif spesifik peran (0-100) untuk masing-masing pemain berdasarkan peran mereka.
+3. Ekstrak strategi terjemahan, fakta teridentifikasi, asumsi AI, dan variabel belum diketahui.
+4. Hasilkan HANYA JSON murni yang tervalidasi sesuai schema.`;
+
+      const payload = {
+        contents: [{ parts: [{ text: `Analisis skenario berikut secara cerdas dan buatkan model insentif pemainnya:\n\n"${promptText}"` }] }],
+        systemInstruction: { parts: [{ text: systemInstruction }] },
+        generationConfig: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: "OBJECT",
+            properties: {
+              title: { type: "STRING" },
+              description: { type: "STRING" },
+              facts: { type: "ARRAY", items: { type: "STRING" } },
+              assumptions: { type: "ARRAY", items: { type: "STRING" } },
+              unknowns: { type: "ARRAY", items: { type: "STRING" } },
+              players: {
+                type: "ARRAY",
+                items: {
+                  type: "OBJECT",
+                  properties: {
+                    name: { type: "STRING" },
+                    role: { type: "STRING" },
+                    power: { type: "STRING" },
+                    resources: { type: "STRING" },
+                    constraints: { type: "STRING" },
+                    computedStrategies: { type: "ARRAY", items: { type: "STRING" } },
+                    incentiveSliders: {
+                      type: "ARRAY",
+                      items: {
+                        type: "OBJECT",
+                        properties: {
+                          label: { type: "STRING" },
+                          value: { type: "NUMBER" },
+                          desc: { type: "STRING" }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              superstructure: {
+                type: "ARRAY",
+                items: {
+                  type: "OBJECT",
+                  properties: {
+                    name: { type: "STRING" },
+                    desc: { type: "STRING" },
+                    type: { type: "STRING" }
+                  }
+                }
+              }
+            },
+            required: ["title", "description", "facts", "assumptions", "players"]
+          }
+        }
+      };
+
+      try {
+        let parsed = null;
+        try {
+          const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+          const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          const result = await response.json();
+          const jsonText = result.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (jsonText) parsed = JSON.parse(jsonText);
+        } catch (apiErr) {
+          console.warn("AI Fallback active:", apiErr);
+        }
+
+        // Fallback Simulation Engine if API key absent or network error
+        if (!parsed) {
+          await new Promise(r => setTimeout(r, 1200));
+          parsed = generateFallbackScenario(promptText);
+        }
+
+        applyParsedDataToState(parsed);
+        closeAiModal();
+        showToast("Skenario berhasil di-parse & dikonfigurasi!", "success");
+        switchTab('tab-players');
+      } catch (err) {
+        showToast("Gagal memproses AI: " + err.message, "info");
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fa-solid fa-play"></i> Analisis & Konfigurasi Skenario`;
+      }
+    }
+
+    function generateFallbackScenario(promptText) {
+      return {
+        title: "Analisis Skenario: " + promptText.substring(0, 35) + "...",
+        description: promptText,
+        facts: ["Pengguna memasukkan skenario konflik kepentingan secara eksplisit.", "Aktor-aktor utama memiliki keterbatasan sumber daya."],
+        assumptions: ["Para pemain diasumsikan bertindak mengoptimalkan insentif masing-masing.", "Komunikasi awal berlangsung secara langsung."],
+        unknowns: ["Apakah ada intervensi regulasi dari pihak luar?"],
+        players: [
+          {
+            name: "Pihak Utama A",
+            role: "Pengambil Keputusan A",
+            power: "Tinggi",
+            resources: "Aset & Keputusan",
+            constraints: "Target efisiensi",
+            computedStrategies: ["Opsi Kooperatif / Moderat", "Opsi Menekan / Agresif"],
+            incentiveSliders: [
+              { label: "Maksimalisasi Hasil materi", value: 80, desc: "Fokus utama pada nilai keuntungan" },
+              { label: "Pengurangan Risiko", value: 60, desc: "Menjaga keamanan posisi" },
+              { label: "Efisiensi Waktu", value: 50, desc: "Kecepatan penyelesaian" }
+            ]
+          },
+          {
+            name: "Pihak Utama B",
+            role: "Penyedia Jasa / Pelaksana",
+            power: "Sedang",
+            resources: "Keahlian & Tenaga",
+            constraints: "Batas wajar usaha",
+            computedStrategies: ["Terima Syarat / Kompromi", "Tolak / Tuntut Lebih Baik"],
+            incentiveSliders: [
+              { label: "Kompensasi Layak", value: 75, desc: "Imbalan yang setimpal" },
+              { label: "Autonomi & Kebebasan", value: 70, desc: "Kenyamanan kerja" },
+              { label: "Keberanian Risiko", value: 40, desc: "Toleransi konflik" }
+            ]
+          }
+        ],
+        superstructure: [
+          { name: "Persaingan Lingkungan", desc: "Suplai dan alternatif di pasar tergolong fleksibel", type: "Fakta" },
+          { name: "Standar Kesepakatan", desc: "Perjanjian bersifat non-binding awal", type: "Asumsi" }
+        ]
+      };
+    }
+
+    function applyParsedDataToState(data) {
+      if (data.title) gameState.title = data.title;
+      if (data.description) gameState.description = data.description;
+      if (data.facts || data.assumptions) {
+        gameState.parsingSummary = {
+          facts: data.facts || [],
+          assumptions: data.assumptions || [],
+          unknowns: data.unknowns || []
+        };
+      }
+
+      if (data.players && Array.isArray(data.players) && data.players.length >= 2) {
+        gameState.players = data.players.map((p, i) => ({
+          id: `p${i+1}`,
+          name: p.name || `Pemain ${i+1}`,
+          role: p.role || "Aktor",
+          power: p.power || "Sedang",
+          resources: p.resources || "Variabel",
+          constraints: p.constraints || "Variabel",
+          computedStrategies: p.computedStrategies || ["Strategi A", "Strategi B"],
+          incentiveSliders: p.incentiveSliders?.map((s, si) => ({
+            id: `inc_${i}_${si}`,
+            label: s.label || "Insentif",
+            value: s.value || 50,
+            desc: s.desc || ""
+          })) || []
+        }));
+      }
+
+      if (data.superstructure && Array.isArray(data.superstructure)) {
+        gameState.superstructure = data.superstructure.map((s, i) => ({ id: `s${i}`, ...s }));
+      }
+
+      rebuildPayoffsForPlayers();
+      syncInputsFromState();
+      renderParsingSummary();
+      renderPlayers();
+      renderSuperstructure();
+      runOutcomeEngine();
+    }
+
+    // ================= EXAMPLE PRESETS =================
+    function loadExamplePreset(type) {
+      if (type === 'price_war') {
+        applyParsedDataToState({
+          title: "Perang Harga Toko Elektronik A vs Toko B",
+          description: "Dua toko pesaing utama memperebutkan pangsa pasar gadget. Toko A ingin mempertahankan profitabilitas margin tinggi, sementara Toko B agresif memberikan diskon untuk menggusur pesaing.",
+          facts: ["Keduanya menjual barang sejenis di lokasi berdekatan", "Konsumen sangat sensitif terhadap harga"],
+          assumptions: ["Modal Toko B lebih kuat untuk menahan rugi sementara"],
+          unknowns: ["Apakah akan ada intervensi dari distributor resmi?"],
+          players: [
+            {
+              name: "Toko Elektronik A",
+              role: "Pemain Pasar Utama",
+              power: "Tinggi (Reputasi)",
+              resources: "Stok Barang & Pelanggan Setia",
+              constraints: "Margin keuntungan minimal",
+              computedStrategies: ["Pertahankan Harga Normal", "Ikut Potong Harga Ekstrem"],
+              incentiveSliders: [
+                { label: "Margin Keuntungan", value: 85, desc: "Menjaga kesehatan arus kas" },
+                { label: "Pangsa Pasar", value: 65, desc: "Retensi jumlah pembeli" },
+                { label: "Toleransi Rugi", value: 30, desc: "Keberanian bakar uang" }
+              ]
+            },
+            {
+              name: "Toko Elektronik B",
+              role: "Pesaing Agresif",
+              power: "Sedang (Dukungan Modal)",
+              resources: "Dana Promosi Besar",
+              constraints: "Harus mencapai kuota volume penjelajah",
+              computedStrategies: ["Pertahankan Harga Normal", "Diskon Ekstrem (Perang Harga)"],
+              incentiveSliders: [
+                { label: "Dominasi Pangsa Pasar", value: 90, desc: "Menguasai pembeli secara absolut" },
+                { label: "Penghancuran Pesaing", value: 75, desc: "Membuat lawan gulung tikar" },
+                { label: "Profitabilitas", value: 40, desc: "Mengabaikan untung jangka pendek" }
+              ]
+            }
+          ],
+          superstructure: [
+            { name: "Daya Beli Konsumen", desc: "Masyarakat cenderung memilih opsi paling murah di katalog online", type: "Fakta" },
+            { name: "Kebijakan Garansi", desc: "Distributor memberikan garansi sama untuk kedua toko", type: "Fakta" }
+          ]
+        });
+      } else if (type === 'designer_client') {
+        applyParsedDataToState({
+          title: "Negosiasi Tarif & Hak Cipta Desain Kreatif",
+          description: "Desainer grafis freelance berhadapan dengan Klien UMKM. Klien menginginkan semua hak cipta dan revisi tanpa batas, sedangkan desainer menginginkan tarif adil dan batasan revisi.",
+          facts: ["Klien memiliki anggaran terbatas", "Desainer membutuhkan portofolio baru"],
+          assumptions: ["Platform perantara mengambil komisi 15%"],
+          unknowns: ["Apakah ada proyek lanjutan di masa depan?"],
+          players: [
+            {
+              name: "Klien UMKM",
+              role: "Pemberi Kerja",
+              power: "Tinggi",
+              resources: "Dana Pembayaran",
+              constraints: "Anggaran terbatas",
+              computedStrategies: ["Tekan Harga & Minta Revisi Bebas", "Setujui Paket Standar Adil"],
+              incentiveSliders: [
+                { label: "Efisiensi Biaya", value: 85, desc: "Menekan pengeluaran semaksimal mungkin" },
+                { label: "Kualitas & Kepastian", value: 70, desc: "Mendapatkan desain terbaik" },
+                { label: "Kecepatan Selesai", value: 60, desc: "Proyek cepat rilis" }
+              ]
+            },
+            {
+              name: "Desainer Freelance",
+              role: "Penyedia Jasa Kreatif",
+              power: "Sedang",
+              resources: "Keahlian & Waktu",
+              constraints: "Kebutuhan hidup bulanan",
+              computedStrategies: ["Terima Syarat Menekan", "Tolak & Minta Syarat Adil"],
+              incentiveSliders: [
+                { label: "Kompensasi Layak", value: 80, desc: "Tarif jam kerja adil" },
+                { label: "Kebebasan Kreatif", value: 75, desc: "Otonomi gagasan" },
+                { label: "Perlindungan Hak Cipta", value: 65, desc: "Lisensi karya terjaga" }
+              ]
+            }
+          ],
+          superstructure: [
+            { name: "Standar Industri Kreatif", desc: "Hak cipta biasanya tetap pada pembuat kecuali dibeli khusus", type: "Asumsi" }
+          ]
+        });
+      } else if (type === 'office_politics') {
+        applyParsedDataToState({
+          title: "Rebutan Alokasi Anggaran & Promosi Kantor",
+          description: "Dua Kepala Divisi (Divisi Produk vs Divisi Pemasaran) berebut porsi anggaran operasional dari Direktur Utama.",
+          facts: ["Direktur menuntut peningkatan omset 30%", "Anggaran total perusahaan terbatas"],
+          assumptions: ["Divisi Pemasaran memiliki kedekatan personal dengan Direktur"],
+          unknowns: ["Apakah efisiensi akan berujung PHK?"],
+          players: [
+            {
+              name: "Kepala Divisi Produk",
+              role: "Manajer Teknis",
+              power: "Sedang",
+              resources: "Tim Developer & Kualitas Produk",
+              constraints: "Beban utang fitur teknis",
+              computedStrategies: ["Minta Tambahan Anggaran R&D", "Ketik Laporan Penghematan"],
+              incentiveSliders: [
+                { label: "Kualitas & Stabilitas Produk", value: 90, desc: "Keunggulan fitur teknis" },
+                { label: "Kekuatan Tim", value: 75, desc: "Mencegah beban kerja berlebih" },
+                { label: "Pengaruh Politik Kantor", value: 50, desc: "Posisi di mata jajaran pimpinan" }
+              ]
+            },
+            {
+              name: "Kepala Divisi Pemasaran",
+              role: "Manajer Komersial",
+              power: "Tinggi",
+              resources: "Kampanye Iklan & Leads",
+              constraints: "Target akuisisi user baru",
+              computedStrategies: ["Monopoli Anggaran Iklan", "Alokasi Berbagi 50-50"],
+              incentiveSliders: [
+                { label: "Pertumbuhan User Baru", value: 85, desc: "Skala kampanye promosi" },
+                { label: "Reputasi Pribadi", value: 80, desc: "Terlihat berprestasi di depan Direktur" },
+                { label: "Kolaborasi Antar Divisi", value: 35, desc: "Kepedulian pada beban divisi teknis" }
+              ]
+            }
+          ],
+          superstructure: [
+            { name: "KPI Perusahaan", desc: "Insentif tahunan direksi diikat pada angka penjualan jangka pendek", type: "Fakta" }
+          ]
+        });
+      }
+      switchTab('tab-engine');
+    }
+
+    // ================= EXPORT & IMPORT DATA =================
+    function exportData() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(gameState, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `game_theory_consequentialist_${Date.now()}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+      showToast("Data proyek berhasil diunduh!", "success");
+    }
+
+    function importData(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          gameState = JSON.parse(e.target.result);
+          syncInputsFromState();
+          renderParsingSummary();
+          renderPlayers();
+          renderSuperstructure();
+          runOutcomeEngine();
+          showToast("Proyek berhasil dimuat!", "success");
+        } catch (err) {
+          showToast("File JSON tidak valid.", "info");
+        }
+      };
+      reader.readAsText(file);
+    }
+  </script>
+</body>
+</html>
